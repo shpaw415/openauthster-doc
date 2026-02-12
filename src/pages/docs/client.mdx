@@ -1,0 +1,170 @@
+# Client SDK
+
+The `OpenAuthsterClient` class (from `openauthster-shared/client/user`) is the recommended way to integrate authentication into your application. It manages the full lifecycle: PKCE login flow, token storage, automatic refresh, session read/write, and authenticated requests.
+
+---
+
+## Creating a Client
+
+```typescript
+import { createOpenAuthsterClient } from "openauthster-shared/client/user";
+
+const client = createOpenAuthsterClient({
+  clientID: "my_project",
+  issuerURI: "https://randomUUID-auth.yourdomain.com",
+  redirectURI: "https://myapp.com/",
+  copyID: "en-us", // copy template for i18n (null if unused)
+  secret: undefined, // server-side only
+});
+```
+
+### Options Reference
+
+| Option         | Type             | Required | Description                                                               |
+| -------------- | ---------------- | -------- | ------------------------------------------------------------------------- |
+| `clientID`     | `string`         | Yes      | Project slug from the Web UI                                              |
+| `issuerURI`    | `string`         | Yes      | Base URL of the OpenAuthster issuer generated during the project creation |
+| `redirectURI`  | `string`         | Yes      | URL the issuer redirects to after login                                   |
+| `copyID`       | `string \| null` | No       | Copy template ID for i18n (e.g. `"en-us"`)                                |
+| `secret`       | `string`         | No       | Client secret — **server-side only**, needed for private sessions         |
+| `token`        | `string \| null` | No       | Pre-existing access token                                                 |
+| `refreshToken` | `string \| null` | No       | Pre-existing refresh token                                                |
+
+---
+
+## Initialisation
+
+### `init()`
+
+Call once in the browser on page load:
+
+```typescript
+await client.init();
+```
+
+This method:
+
+1. Checks if a `code` query parameter exists (OAuth callback).
+2. Check if a `invite_id` query parameter exists (invite flow).
+3. If so, exchanges it for tokens using the stored PKCE challenge.
+4. Otherwise, restores tokens from `localStorage`.
+5. Fires all registered initialisation listeners.
+
+---
+
+## Authentication
+
+### `login()`
+
+Redirects the user to the issuer's login page:
+
+```typescript
+await client.login();
+```
+
+Under the hood this calls `client.authorize(redirectURI, "code")`, stores a PKCE challenge in `localStorage`, and sets `window.location.href`.
+
+### `logout()`
+
+Clears all tokens and session data:
+
+```typescript
+client.logout();
+```
+
+After calling `logout()`:
+
+- `isAuthenticated` becomes `false`
+- `data.public` and `data.private` are reset to `{}`
+- Tokens are removed from `localStorage`
+- The refresh timer is cancelled
+
+---
+
+## Auth State
+
+```typescript
+client.isAuthenticated; // boolean — true once tokens are obtained
+client.isLoaded; // boolean — true after init() completes
+client.expiresIn; // number | undefined — seconds until access token expires
+client.userMeta; // { user_id: string | null, user_identifier: string | null }
+```
+
+---
+
+## Authenticated Fetch
+
+`client.fetch()` works like the global `fetch()` but adds auth headers automatically:
+
+```typescript
+const res = await client.fetch("/api/v1/profile");
+const data = await res.json();
+```
+
+Headers added:
+
+- `Authorization: Bearer <accessToken>`
+- `X-Client-Secret: <secret>` (only when a secret is configured)
+
+---
+
+## Auto Token Refresh
+
+The client schedules a silent refresh **60 seconds before** the access token expires. New tokens are persisted to `localStorage` automatically. If the refresh fails, a warning is logged to the console.
+
+---
+
+## Listeners
+
+Register callbacks that fire when auth state changes:
+
+```typescript
+client.addInitializationListener("my-key", () => {
+  console.log("Auth state changed:", client.isAuthenticated);
+});
+```
+
+Call `triggerUpdate()` manually after state-changing operations like `updateUserSession()`:
+
+```typescript
+await client.updateUserSession("public", { theme: "dark" });
+client.triggerUpdate(); // listeners fire
+```
+
+---
+
+## Updating Copy Template
+
+Switch the i18n copy template at runtime:
+
+```typescript
+client.updateOptions({ copyID: "fr-fr" });
+```
+
+This recreates the internal OpenAuth client with the new template.
+
+---
+
+## Low-Level Client
+
+If you only need the raw `@openauthjs/openauth` client with OpenAuthster cookies, import from `openauthster-shared/client`:
+
+```typescript
+import { createClient, createServerClient } from "openauthster-shared/client";
+
+const rawClient = createClient({
+  clientID: "my_project",
+  issuer: "https://auth.yourdomain.com",
+  copyID: "en-us",
+});
+```
+
+This returns a plain OpenAuth `Client` — you handle tokens, storage, and refreshing yourself.
+
+---
+
+## Next Steps
+
+- [Working with sessions →](/docs/sessions)
+- [Server-side usage →](/docs/server)
+- [React integration →](/docs/react)

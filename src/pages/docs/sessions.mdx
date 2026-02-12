@@ -1,0 +1,128 @@
+# Sessions
+
+OpenAuthster stores two session buckets per user: **public** and **private**.
+
+| Bucket      | Readable from    | Writable from    | Requires `secret`? |
+| ----------- | ---------------- | ---------------- | ------------------ |
+| **public**  | Browser + Server | Browser + Server | No                 |
+| **private** | Server only      | Server only      | Yes                |
+
+Both buckets accept arbitrary JSON data. You define the shape however you like.
+
+---
+
+## Reading a Session
+
+```typescript
+const result = await client.getUserSession("public");
+
+if (result instanceof Error) {
+  console.error(result.message);
+} else {
+  // result contains { public, private, user_id, user_identifier }
+  console.log(result);
+}
+```
+
+After a successful call the data is also cached on the client instance:
+
+```typescript
+client.data.public; // your public session data
+client.data.private; // your private session data (if fetched with secret)
+client.userMeta.user_id; // stable user ID
+client.userMeta.user_identifier; // e.g. the user's email
+```
+
+---
+
+## Updating a Session
+
+`updateUserSession` merges the provided data with the existing session:
+
+```typescript
+// Update public session (browser or server)
+await client.updateUserSession("public", {
+  displayName: "Alice",
+  theme: "dark",
+});
+
+// Update private session (server only — requires secret)
+await client.updateUserSession("private", {
+  internalRole: "admin",
+  stripeCustomerId: "cus_xxx",
+});
+```
+
+After updating, you can trigger UI re-renders:
+
+```typescript
+client.triggerUpdate();
+```
+
+---
+
+## Clearing a Session
+
+Clear replaces the entire bucket with an empty object:
+
+```typescript
+// Clear public session
+await client.clearPublicSession();
+
+// Clear private session (server only)
+await client.clearPrivateSession();
+```
+
+---
+
+## Typed Sessions
+
+Pass generic type parameters when creating the client for full type safety:
+
+```typescript
+type PublicData = {
+  displayName: string;
+  theme: "light" | "dark";
+};
+
+type PrivateData = {
+  internalRole: string;
+  stripeCustomerId: string;
+};
+
+const client = createOpenAuthsterClient<PublicData, PrivateData>({
+  clientID: "my_project",
+  issuerURI: "https://auth.yourdomain.com",
+  redirectURI: "https://myapp.com/",
+  copyID: null,
+});
+
+// client.data.public  → PublicData
+// client.data.private → PrivateData
+```
+
+---
+
+## How It Works Internally
+
+Session operations send a `POST` request to the issuer's `/user-endpoint` path with form data:
+
+| Field       | Description                         |
+| ----------- | ----------------------------------- |
+| `action`    | `"get"`, `"update"`, or `"delete"`  |
+| `type`      | `"public"` or `"private"`           |
+| `client_id` | Your project's client ID            |
+| `data`      | JSON-stringified data (for updates) |
+
+The request includes:
+
+- `Authorization: Bearer <accessToken>`
+- `X-Client-Secret: <secret>` (when configured, for private sessions)
+
+---
+
+## Next Steps
+
+- [Server-side usage →](/docs/server)
+- [React integration →](/docs/react)
+- [Client SDK reference →](/docs/client)

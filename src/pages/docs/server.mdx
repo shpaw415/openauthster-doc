@@ -1,0 +1,146 @@
+# Server-Side Usage
+
+Use `OpenAuthsterClient` on the server (API routes, Cloudflare Workers, etc.) to verify tokens and access private sessions.
+
+---
+
+## Creating a Server Client
+
+```typescript
+import { createOpenAuthsterClient } from "openauthster-shared/client/user";
+
+export function createServerAuth() {
+  return createOpenAuthsterClient({
+    clientID: "my_project",
+    issuerURI: "https://auth.yourdomain.com",
+    redirectURI: "https://myapp.com/",
+    copyID: null,
+    secret: process.env.AUTH_SECRET, // required for private sessions
+  });
+}
+```
+
+The `secret` is required to read/write private session data. It should be kept server-side only.
+
+---
+
+## Extracting the Token from a Request
+
+Use `setTokenFromRequest(request)` to read the `Authorization: Bearer …` header and set the client's token in one call:
+
+```typescript
+export async function handleRequest(request: Request) {
+  const auth = createServerAuth();
+
+  auth.setTokenFromRequest(request);
+
+  if (!auth.isAuthenticated) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  // auth is now ready — read sessions, etc.
+}
+```
+
+If you just need the raw token string without mutating the client:
+
+```typescript
+const token = auth.getTokenFromRequest(request);
+```
+
+---
+
+## Reading Private Sessions
+
+```typescript
+export async function GET(request: Request) {
+  const auth = createServerAuth();
+  auth.setTokenFromRequest(request);
+
+  if (!auth.isAuthenticated) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const session = await auth.getUserSession("private");
+
+  if (session instanceof Error) {
+    return new Response(session.message, { status: 500 });
+  }
+
+  return new Response(JSON.stringify(session), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+```
+
+---
+
+## Writing Private Sessions
+
+```typescript
+export async function POST(request: Request) {
+  const auth = createServerAuth();
+  auth.setTokenFromRequest(request);
+
+  if (!auth.isAuthenticated) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const body = await request.json();
+
+  const result = await auth.updateUserSession("private", body);
+
+  if (result instanceof Error) {
+    return new Response(result.message, { status: 500 });
+  }
+
+  return new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+```
+
+---
+
+## Clearing Private Sessions
+
+```typescript
+export async function DELETE(request: Request) {
+  const auth = createServerAuth();
+  auth.setTokenFromRequest(request);
+
+  if (!auth.isAuthenticated) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const result = await auth.clearPrivateSession();
+
+  if (result instanceof Error) {
+    return new Response(result.message, { status: 500 });
+  }
+
+  return new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+```
+
+---
+
+## API Reference
+
+| Method                               | Description                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| `setTokenFromRequest(req)`           | Reads `Authorization: Bearer …` and sets the token + `isAuthenticated` |
+| `getTokenFromRequest(req)`           | Returns the bearer token string or `null`                              |
+| `getUserSession("private")`          | Fetches the private session (needs secret)                             |
+| `updateUserSession("private", data)` | Merges data into the private session                                   |
+| `clearPrivateSession()`              | Replaces private session with `{}`                                     |
+
+---
+
+## Next Steps
+
+- [React integration →](/docs/react)
+- [Sessions in depth →](/docs/sessions)
+- [Client SDK reference →](/docs/client)

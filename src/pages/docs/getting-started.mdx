@@ -1,0 +1,108 @@
+# Getting Started
+
+Welcome to OpenAuthster! This guide walks you through setting up authentication in your app.
+
+---
+
+## Overview
+
+OpenAuthster is a **multi-tenant authentication server** built on [OpenAuth](https://openauth.js.org/) and deployed to **Cloudflare Workers**. It provides:
+
+1. An **issuer server** ([OpenAuthSter-issuer](https://github.com/shpaw415/OpenAuthSter-issuer)) that handles OAuth flows, token management, and session storage.
+2. A **Web UI dashboard** ([OpenAuthSter-webUI](https://github.com/shpaw415/OpenAuthSter-webUI)) where you create projects, configure providers (Google, GitHub, email/password, etc.), and customise login themes.
+3. A **client SDK** ([OpenAuthSter-shared](https://github.com/shpaw415/OpenAuthSter-shared)) that your app uses to talk to the issuer.
+
+---
+
+## Prerequisites
+
+Before integrating OpenAuthster into your application, you need:
+
+1. ✅ **Deployed OpenAuthster Issuer** - See [Installation Guide](/docs/installation)
+2. ✅ **Deployed OpenAuthster WebUI** - See [Installation Guide](/docs/installation)
+3. ✅ **Project created in WebUI** with at least one provider enabled
+4. ✅ **Node.js or Bun runtime** for your application
+
+---
+
+## 1. Access the SDK
+
+> **Note:** The `openauthster-shared` package is currently for local development within the OpenAuthster workspace. Public npm publication is planned for future releases.
+
+**For Local Development:**
+
+Clone the OpenAuthster workspace and use the shared types locally:
+
+```bash
+git clone https://github.com/shpaw415/OpenAuthSter-shared.git
+```
+
+**Coming Soon:**
+
+```bash
+# npm (not yet published)
+npm install openauthster-shared
+
+# Bun (not yet published)
+bun add openauthster-shared
+```
+
+---
+
+## 2. Create a Client
+
+```typescript
+import { createOpenAuthsterClient } from "openauthster-shared/client/user";
+
+const auth = createOpenAuthsterClient({
+  clientID: "my_project", // project slug from the Web UI
+  issuerURI: "https://auth.yourdomain.com", // your issuer URL
+  redirectURI: "https://myapp.com/", // where users return after login
+  copyID: "en-us", // i18n copy template (or null)
+});
+```
+
+---
+
+## 3. Initialise in the Browser
+
+Call `init()` once on page load. It:
+
+- Checks for an OAuth `code` in the URL (i.e. a callback from the issuer).
+- Exchanges it for an access + refresh token.
+- Restores tokens from `localStorage` if already logged in.
+
+```typescript
+await auth.init();
+```
+
+---
+
+## 4. Login
+
+```typescript
+await auth.login(); // redirects to the issuer
+```
+
+When the user finishes, they're redirected back to `redirectURI`. On that page load `init()` exchanges the code automatically.
+
+---
+
+## 5. Use Auth State
+
+```typescript
+if (auth.isAuthenticated) {
+  console.log(auth.userMeta.user_identifier); // e.g. email
+  console.log(auth.data.public); // public session data
+}
+```
+
+---
+
+## Next Steps
+
+- [Installation details](/docs/installation)
+- [Client SDK in depth](/docs/client)
+- [Working with sessions](/docs/sessions)
+- [Server-side usage](/docs/server)
+- [React integration](/docs/react)

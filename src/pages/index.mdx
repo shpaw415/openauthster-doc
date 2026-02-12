@@ -1,0 +1,74 @@
+# OpenAuthster
+
+**Multi-tenant authentication for Cloudflare Workers**, powered by [OpenAuth](https://openauth.js.org/).
+
+Deploy a fully-featured auth issuer once, then manage many projects from a single Web UI — with social logins, email/password, OIDC, per-user sessions, and more.
+
+---
+
+## Why OpenAuthster?
+
+- **Multi-tenant by design** — one deployment serves every project you create in the Web UI.
+- **Edge-first** — runs on Cloudflare Workers for worldwide low latency.
+- **Full Web UI** — manage projects, configure providers, customise themes and i18n copy templates from a dashboard.
+- **Session storage** — public and private session buckets per user, accessible from client or server.
+- **Auto token refresh** — the client SDK handles PKCE, token exchange, and silent refresh for you.
+
+---
+
+## Quick Start
+
+> **📦 Note:** The `openauthster-shared` package is currently for local development within the OpenAuthster workspace. Public npm publication is planned for future releases.
+
+**Nightly Client version:**
+
+```bash
+# Clone the shared client repository
+git clone https://github.com/shpaw415/OpenAuthSter-shared.git
+```
+
+**Current Client version:**
+
+```bash
+bun add openauthster-shared
+```
+
+> the version of `openauthster-shared` should always match at least the patch version of `OpenAuthSter-issuer` you're using, so check the latest release notes for compatibility.
+
+**Usage:**
+
+```typescript
+import { createOpenAuthsterClient } from "openauthster-shared/client/user";
+
+const client = createOpenAuthsterClient({
+  clientID: "my_project",
+  issuerURI: "https://auth.yourdomain.com",
+  redirectURI: "https://myapp.com/",
+  copyID: "en-us",
+});
+
+// Browser init — exchanges callback code and restores tokens
+await client.init();
+
+// Redirect to login
+await client.login();
+
+// Check state
+client.isAuthenticated; // true after login
+client.data.public; // user's public session data
+```
+
+[Read the full Getting Started guide →](/docs/getting-started)
+
+---
+
+## Repositories
+
+| Repository                                                             | Description                               |
+| ---------------------------------------------------------------------- | ----------------------------------------- |
+| [OpenAuthster](https://github.com/shpaw415/openauthster)               | Main project overview                     |
+| [OpenAuthSter-issuer](https://github.com/shpaw415/OpenAuthSter-issuer) | Authentication server (Cloudflare Worker) |
+| [OpenAuthSter-webUI](https://github.com/shpaw415/OpenAuthSter-webUI)   | Management dashboard (Cloudflare Pages)   |
+| [OpenAuthSter-shared](https://github.com/shpaw415/OpenAuthSter-shared) | Client SDK, types & database schemas      |
+| [openauth-react](https://github.com/shpaw415/openauth-react)           | React integration (WIP)                   |
+| [openauthster-doc](https://github.com/shpaw415/openauthster-doc)       | Documentation site (this site)            |

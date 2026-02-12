@@ -1,0 +1,157 @@
+# Documentation
+
+Welcome to the OpenAuthster documentation. Learn how to deploy and integrate multi-tenant authentication into your applications.
+
+---
+
+## What is OpenAuthster?
+
+OpenAuthster is a **multi-tenant authentication system** built on [OpenAuth](https://openauth.js.org/) for **Cloudflare Workers**. It provides:
+
+- 🔐 **Issuer Server** - OAuth 2.0 / OIDC authentication at the edge
+- 🏢 **Multi-Tenant** - Manage multiple projects from a single deployment
+- 🎨 **Web UI Dashboard** - Configure themes, providers, and projects
+- 📦 **Client SDKs** - TypeScript client with React integration
+- ☁️ **Edge Deployment** - Global low-latency on Cloudflare's network
+
+---
+
+## Quick Navigation
+
+### Getting Started
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+  <a
+    href="/docs/getting-started"
+    className="block p-6 border rounded-lg hover:border-blue-500 transition"
+  >
+    <h3 className="text-xl font-semibold mb-2">🚀 Getting Started</h3>
+    <p className="text-gray-600">
+      Quick introduction to OpenAuthster and basic setup
+    </p>
+  </a>
+
+  <a
+    href="/docs/installation"
+    className="block p-6 border rounded-lg hover:border-blue-500 transition"
+  >
+    <h3 className="text-xl font-semibold mb-2">📦 Installation</h3>
+    <p className="text-gray-600">
+      Complete deployment guide for Issuer and WebUI
+    </p>
+  </a>
+</div>
+
+### Integration Guides
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+  <a
+    href="/docs/client"
+    className="block p-6 border rounded-lg hover:border-blue-500 transition"
+  >
+    <h3 className="text-xl font-semibold mb-2">🔌 Client SDK</h3>
+    <p className="text-gray-600">
+      Browser-side authentication with OpenAuthsterClient
+    </p>
+  </a>
+
+<a
+  href="/docs/react"
+  className="block p-6 border rounded-lg hover:border-blue-500 transition"
+>
+  <h3 className="text-xl font-semibold mb-2">⚛️ React Integration</h3>
+  <p className="text-gray-600">Provider and hooks for React applications</p>
+</a>
+
+<a
+  href="/docs/server"
+  className="block p-6 border rounded-lg hover:border-blue-500 transition"
+>
+  <h3 className="text-xl font-semibold mb-2">🖥️ Server-Side</h3>
+  <p className="text-gray-600">
+    API routes, token verification, and private sessions
+  </p>
+</a>
+
+  <a
+    href="/docs/sessions"
+    className="block p-6 border rounded-lg hover:border-blue-500 transition"
+  >
+    <h3 className="text-xl font-semibold mb-2">💾 Sessions</h3>
+    <p className="text-gray-600">Managing public and private session data</p>
+  </a>
+</div>
+
+---
+
+## Architecture
+
+OpenAuthster follows a modular architecture:
+
+```
+┌─────────────────┐
+│  Your App       │
+│  (React/Next)   │
+└────────┬────────┘
+         │ Uses OpenAuthsterClient
+         │
+         ▼
+┌─────────────────────────────────┐
+│  OpenAuthster Issuer            │
+│  (Cloudflare Worker)            │
+│  • Multi-tenant auth            │
+│  • OAuth providers              │
+│  • D1 Database                  │
+└────────┬────────────────────────┘
+         │ Managed by
+         │
+         ▼
+┌─────────────────────────────────┐
+│  OpenAuthster WebUI             │
+│  (Cloudflare Pages)             │
+│  • Project management           │
+│  • Theme customization          │
+│  • Provider configuration       │
+└─────────────────────────────────┘
+```
+
+---
+
+## Deployment Sequence
+
+To use OpenAuthster, deploy the components in this order:
+
+1. **[Deploy Issuer](/docs/installation#part-1-deploy-the-issuer)** - The authentication server
+2. **[Deploy WebUI](/docs/installation#part-2-deploy-the-webui)** - The management dashboard
+3. **[Integrate Client](/docs/installation#part-3-client-sdk)** - Add to your application
+
+---
+
+## GitHub Repositories
+
+All OpenAuthster components are open source:
+
+| Repository                                                                 | Description             |
+| -------------------------------------------------------------------------- | ----------------------- |
+| **[openauthster](https://github.com/shpaw415/openauthster)**               | Main project overview   |
+| **[OpenAuthSter-issuer](https://github.com/shpaw415/OpenAuthSter-issuer)** | Authentication server   |
+| **[OpenAuthSter-webUI](https://github.com/shpaw415/OpenAuthSter-webUI)**   | Management dashboard    |
+| **[OpenAuthSter-shared](https://github.com/shpaw415/OpenAuthSter-shared)** | Client SDK and types    |
+| **[openauth-react](https://github.com/shpaw415/openauth-react)**           | React integration (WIP) |
+| **[openauthster-doc](https://github.com/shpaw415/openauthster-doc)**       | Documentation site      |
+
+---
+
+## Need Help?
+
+- 💬 [GitHub Discussions](https://github.com/shpaw415/openauthster/discussions)
+- 🐛 [Report Issues](https://github.com/shpaw415/openauthster/issues)
+- 📖 Browse the documentation using the navigation above
+
+---
+
+## Start Here
+
+👉 New to OpenAuthster? Begin with the [Getting Started Guide](/docs/getting-started)
+
+👉 Ready to deploy? Follow the [Installation Guide](/docs/installation)

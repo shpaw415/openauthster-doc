@@ -1,0 +1,273 @@
+# React Integration
+
+Integrate OpenAuthster into a React application with a context provider and hook.
+
+> **📦 Package Status:** The official [openauth-react](https://github.com/shpaw415/openauth-react) package is under active development (WIP). Until published, use the examples below with `openauthster-shared/client/user` directly.
+
+## Current Approach
+
+The examples on this page show how to integrate OpenAuthster using the low-level `OpenAuthsterClient` from `openauthster-shared/client/user`. This approach gives you full control and works perfectly while the dedicated React package is being finalized.
+
+## Future: openauth-react Package
+
+Once available, you'll be able to install:
+
+```bash
+# Coming soon
+npm install openauth-react
+```
+
+The dedicated package will provide a ready-made provider and hooks with the same API shown below.
+
+---
+
+---
+
+## Auth Provider
+
+Create a provider that initialises the client once and shares it via React context:
+
+```tsx
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  createOpenAuthsterClient,
+  type OpenAuthsterClient,
+} from "openauthster-shared/client/user";
+
+// Use a global so the context survives HMR and StrictMode double-mounts
+declare global {
+  var __AUTH_CTX__: React.Context<OpenAuthsterClient>;
+}
+globalThis.__AUTH_CTX__ ??= createContext({} as OpenAuthsterClient);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const client = useRef(
+    createOpenAuthsterClient({
+      clientID: "my_project",
+      issuerURI: "https://auth.yourdomain.com",
+      redirectURI: "http://localhost:3000/",
+      copyID: "en-us",
+    }),
+  );
+
+  useEffect(() => {
+    client.current.init().then(() => {
+      client.current
+        .getUserSession("public")
+        .then(() => client.current.triggerUpdate());
+    });
+  }, []);
+
+  return (
+    <globalThis.__AUTH_CTX__.Provider value={client.current}>
+      {children}
+    </globalThis.__AUTH_CTX__.Provider>
+  );
+}
+```
+
+---
+
+## `useAuth` Hook
+
+A hook that subscribes to auth state changes and triggers re-renders:
+
+```tsx
+export function useAuth() {
+  const ctx = useContext(globalThis.__AUTH_CTX__);
+  const key = useRef(crypto.randomUUID());
+  const [, rerender] = useState("");
+
+  useEffect(() =>
+    ctx.addInitializationListener(key.current, () =>
+      rerender(crypto.randomUUID()),
+    ),
+  );
+
+  return ctx;
+}
+```
+
+The hook returns the full `OpenAuthsterClient` instance so you have access to every method and property.
+
+---
+
+## Mounting the Provider
+
+Wrap your app (or the relevant sub-tree) with `<AuthProvider>`:
+
+```tsx
+import { AuthProvider } from "./auth";
+
+export default function App({ children }) {
+  return <AuthProvider>{children}</AuthProvider>;
+}
+```
+
+---
+
+## Using Auth in Components
+
+### Login / Logout
+
+```tsx
+function LoginButton() {
+  const auth = useAuth();
+
+  if (!auth.isLoaded) return <p>Loading…</p>;
+
+  return auth.isAuthenticated ? (
+    <button onClick={() => auth.logout()}>Logout</button>
+  ) : (
+    <button onClick={() => auth.login()}>Login</button>
+  );
+}
+```
+
+### Displaying User Data
+
+```tsx
+function UserProfile() {
+  const auth = useAuth();
+
+  if (!auth.isAuthenticated) return null;
+
+  return (
+    <div>
+      <p>User: {auth.userMeta.user_identifier}</p>
+      <pre>{JSON.stringify(auth.data.public, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+### Updating Session Data
+
+```tsx
+function ThemeToggle() {
+  const auth = useAuth();
+
+  const toggle = async () => {
+    const next = auth.data.public?.theme === "dark" ? "light" : "dark";
+    await auth.updateUserSession("public", { theme: next });
+    auth.triggerUpdate();
+  };
+
+  return (
+    <button onClick={toggle}>
+      Switch to {auth.data.public?.theme === "dark" ? "light" : "dark"}
+    </button>
+  );
+}
+```
+
+### Authenticated API Calls
+
+Use `auth.fetch()` to call your own protected endpoints:
+
+```tsx
+function PrivateData() {
+  const auth = useAuth();
+  const [data, setData] = useState(null);
+
+  const load = async () => {
+    const res = await auth.fetch("/api/v1/session");
+    if (res.ok) setData(await res.json());
+  };
+
+  return (
+    <div>
+      <button onClick={load}>Load private data</button>
+      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+    </div>
+  );
+}
+```
+
+---
+
+## Full Minimal Example
+
+```tsx
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createOpenAuthsterClient,
+  type OpenAuthsterClient,
+} from "openauthster-shared/client/user";
+
+declare global {
+  var __AUTH_CTX__: React.Context<OpenAuthsterClient>;
+}
+globalThis.__AUTH_CTX__ ??= createContext({} as OpenAuthsterClient);
+
+function AuthProvider({ children }: { children: React.ReactNode }) {
+  const client = useRef(
+    createOpenAuthsterClient({
+      clientID: "my_project",
+      issuerURI: "https://auth.yourdomain.com",
+      redirectURI: "http://localhost:3000/",
+      copyID: "en-us",
+    }),
+  );
+  useEffect(() => {
+    client.current.init().then(() => {
+      client.current
+        .getUserSession("public")
+        .then(() => client.current.triggerUpdate());
+    });
+  }, []);
+  return (
+    <globalThis.__AUTH_CTX__.Provider value={client.current}>
+      {children}
+    </globalThis.__AUTH_CTX__.Provider>
+  );
+}
+
+function useAuth() {
+  const ctx = useContext(globalThis.__AUTH_CTX__);
+  const key = useRef(crypto.randomUUID());
+  const [, rerender] = useState("");
+  useEffect(() =>
+    ctx.addInitializationListener(key.current, () =>
+      rerender(crypto.randomUUID()),
+    ),
+  );
+  return ctx;
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <HomePage />
+    </AuthProvider>
+  );
+}
+
+function HomePage() {
+  const auth = useAuth();
+  if (!auth.isLoaded) return <p>Loading…</p>;
+  return auth.isAuthenticated ? (
+    <div>
+      <p>Hello, {auth.userMeta.user_identifier}!</p>
+      <button onClick={() => auth.logout()}>Logout</button>
+    </div>
+  ) : (
+    <button onClick={() => auth.login()}>Login</button>
+  );
+}
+```
+
+---
+
+## Next Steps
+
+- [Client SDK reference →](/docs/client)
+- [Sessions →](/docs/sessions)
+- [Server-side usage →](/docs/server)
