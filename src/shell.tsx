@@ -27,6 +27,7 @@ export default function RenderShell({
         <meta name="description" content={siteConfig.description} />
         <meta name="author" content={siteConfig.author.name} />
         <meta name="color-scheme" content="light dark" />
+        <meta name="robots" content="index, follow" />
 
         {/* Open Graph / Social */}
         <meta property="og:type" content={siteConfig.seo.openGraph.type} />

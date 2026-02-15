@@ -6,6 +6,7 @@ import mdxLoader from "frame-master-plugin-mdx-to-js-loader";
 import rehypePrettyCode from "rehype-pretty-code";
 //@ts-ignore
 import remarkGfm from "remark-gfm";
+import RobotsPlugin from "./plugins/robots";
 
 export default {
   HTTPServer: {
@@ -44,6 +45,7 @@ export default {
       inputFile: "static/tailwind.css",
       outputFile: "static/style.css",
     }),
+    RobotsPlugin(),
     {
       name: "static-assets",
       version: "1.0.0",
