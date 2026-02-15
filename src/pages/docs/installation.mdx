@@ -13,6 +13,8 @@ OpenAuthster requires deploying two components in sequence:
 
 Once deployed, you integrate the client SDK into your application.
 
+> Compatibility (v0.2.0): deploy Issuer, WebUI, and use `openauthster-shared` v0.2.x together. Mixing 0.1.x with 0.2.x APIs is not supported.
+
 ---
 
 ## Part 1: Deploy the Issuer
@@ -233,19 +235,14 @@ Visit your WebUI URL and create your first project.
 
 ## Part 3: Client SDK
 
-### For Local Development
-
-Clone the shared types repository:
-
-```bash
-git clone https://github.com/shpaw415/OpenAuthSter-shared.git
-```
-
 ### npm Installation
 
+> Note: make sure to use the version matching your issuer/WebUI (e.g. `0.2.x` for the latest release).
+
 ```bash
-# Coming soon
-npm install openauthster-shared
+npm install openauthster-shared@0.x.x
+# or
+bun add openauthster-shared@0.x.x
 ```
 
 ---
@@ -274,6 +271,15 @@ The package exposes several entry points you can import from:
 | `openauthster-shared/endpoints`   | API endpoint type definitions                                                      |
 
 For most apps you only need `openauthster-shared/client/user`.
+
+---
+
+## Upgrade from 0.1.x to 0.2.0
+
+1. Update client apps to `openauthster-shared@0.2.x`.
+2. Redeploy the issuer with the v0.2.0 code (no database migration is required).
+3. Redeploy the WebUI with v0.2.0 to match the new admin/session endpoints.
+4. Verify health/version endpoints: `/health`, `/version`.
 
 ---
 

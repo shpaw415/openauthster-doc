@@ -26,13 +26,13 @@ The `secret` is required to read/write private session data. It should be kept s
 
 ## Extracting the Token from a Request
 
-Use `setTokenFromRequest(request)` to read the `Authorization: Bearer …` header and set the client's token in one call:
+Use `setTokenFromRequest(request)` to read the `Authorization: Bearer …` header, verify the authenticity, and set the client's token in one call:
 
 ```typescript
 export async function handleRequest(request: Request) {
   const auth = createServerAuth();
 
-  auth.setTokenFromRequest(request);
+  await auth.setTokenFromRequest(request);
 
   if (!auth.isAuthenticated) {
     return new Response("Unauthorized", { status: 401 });
@@ -48,6 +48,8 @@ If you just need the raw token string without mutating the client:
 const token = auth.getTokenFromRequest(request);
 ```
 
+`setTokenFromRequest()` now verifies the token before accepting it and also falls back to the `access_token` cookie when the header is missing (v0.2.0).
+
 ---
 
 ## Reading Private Sessions
@@ -55,7 +57,7 @@ const token = auth.getTokenFromRequest(request);
 ```typescript
 export async function GET(request: Request) {
   const auth = createServerAuth();
-  auth.setTokenFromRequest(request);
+  await auth.setTokenFromRequest(request);
 
   if (!auth.isAuthenticated) {
     return new Response("Unauthorized", { status: 401 });
@@ -75,12 +77,29 @@ export async function GET(request: Request) {
 
 ---
 
+## Admin user management (v0.2.0)
+
+With a `secret` you can call the built-in admin helpers (server-side only):
+
+```typescript
+const auth = createServerAuth();
+
+await auth.getUsers({ page: 1, limit: 10 });
+await auth.getUserById("user_123");
+await auth.updateUserById("user_123", { public_session: { theme: "dark" } });
+await auth.deleteUserById("user_123");
+```
+
+These wrap the issuer's `/users/:clientID` and `/user/:clientID/:userID` endpoints and perform schema validation for you.
+
+---
+
 ## Writing Private Sessions
 
 ```typescript
 export async function POST(request: Request) {
   const auth = createServerAuth();
-  auth.setTokenFromRequest(request);
+  await auth.setTokenFromRequest(request);
 
   if (!auth.isAuthenticated) {
     return new Response("Unauthorized", { status: 401 });
@@ -136,6 +155,10 @@ export async function DELETE(request: Request) {
 | `getUserSession("private")`          | Fetches the private session (needs secret)                             |
 | `updateUserSession("private", data)` | Merges data into the private session                                   |
 | `clearPrivateSession()`              | Replaces private session with `{}`                                     |
+| `getUsers(filters?)`                 | Admin: paginated user list (requires secret)                           |
+| `getUserById(user_id)`               | Admin: fetch a single user (requires secret)                           |
+| `updateUserById(user_id, data)`      | Admin: overwrite user fields (requires secret)                         |
+| `deleteUserById(user_id)`            | Admin: remove a user (requires secret)                                 |
 
 ---
 

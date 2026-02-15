@@ -12,6 +12,8 @@ OpenAuthster is a **multi-tenant authentication server** built on [OpenAuth](htt
 2. A **Web UI dashboard** ([OpenAuthSter-webUI](https://github.com/shpaw415/OpenAuthSter-webUI)) where you create projects, configure providers (Google, GitHub, email/password, etc.), and customise login themes.
 3. A **client SDK** ([OpenAuthSter-shared](https://github.com/shpaw415/OpenAuthSter-shared)) that your app uses to talk to the issuer.
 
+> Version 0.2.0: update issuer, WebUI, and `openauthster-shared` together to get the new admin + session endpoints.
+
 ---
 
 ## Prerequisites
@@ -27,24 +29,12 @@ Before integrating OpenAuthster into your application, you need:
 
 ## 1. Access the SDK
 
-> **Note:** The `openauthster-shared` package is currently for local development within the OpenAuthster workspace. Public npm publication is planned for future releases.
-
-**For Local Development:**
-
-Clone the OpenAuthster workspace and use the shared types locally:
-
-```bash
-git clone https://github.com/shpaw415/OpenAuthSter-shared.git
-```
-
-**Coming Soon:**
-
 ```bash
 # npm (not yet published)
-npm install openauthster-shared
+npm install openauthster-shared@0.x.x
 
 # Bun (not yet published)
-bun add openauthster-shared
+bun add openauthster-shared@0.x.x
 ```
 
 ---

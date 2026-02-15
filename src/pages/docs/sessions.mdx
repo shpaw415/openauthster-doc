@@ -47,6 +47,9 @@ await client.updateUserSession("public", {
 });
 
 // Update private session (server only — requires secret)
+
+---
+
 await client.updateUserSession("private", {
   internalRole: "admin",
   stripeCustomerId: "cus_xxx",
@@ -72,6 +75,15 @@ await client.clearPublicSession();
 // Clear private session (server only)
 await client.clearPrivateSession();
 ```
+
+## Session API endpoints (v0.2.0)
+
+The issuer now exposes REST endpoints for session management:
+
+- Public: `GET /session/public/:clientID`, `PATCH /session/public/:clientID`, `DELETE /session/public/:clientID` (Bearer token only)
+- Private: `GET /session/private/:clientID`, `PATCH /session/private/:clientID`, `DELETE /session/private/:clientID` (X-Client-Secret)
+
+Use these when you need to manage sessions outside the client SDK (e.g. from other services or test scripts).
 
 ---
 
@@ -104,6 +116,8 @@ const client = createOpenAuthsterClient<PublicData, PrivateData>({
 ---
 
 ## How It Works Internally
+
+> Warning: Deprecated v0.1.x
 
 Session operations send a `POST` request to the issuer's `/user-endpoint` path with form data:
 

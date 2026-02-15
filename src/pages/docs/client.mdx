@@ -29,6 +29,31 @@ const client = createOpenAuthsterClient({
 | `secret`       | `string`         | No       | Client secret — **server-side only**, needed for private sessions         |
 | `token`        | `string \| null` | No       | Pre-existing access token                                                 |
 | `refreshToken` | `string \| null` | No       | Pre-existing refresh token                                                |
+| `subject`      | `SubjectSchema`  | No       | Custom subject schema for token verification (defaults to built-in)       |
+
+### Custom subject schema (0.2.0)
+
+> The subject should be set both in the issuer and client to work.  
+> Issuer: `openauth.config.ts`
+
+```typescript
+import { createSubjects } from "@openauthjs/openauth/subject";
+
+const subject = createSubjects({
+  user: v.object({
+    id: v.string(),
+    email: v.string(),
+    role: v.union([v.literal("admin"), v.literal("user")]),
+  }),
+});
+
+const client = createOpenAuthsterClient({
+  clientID: "my_project",
+  issuerURI: "https://auth.yourdomain.com",
+  redirectURI: "https://myapp.com/",
+  subject,
+});
+```
 
 ---
 
@@ -49,6 +74,10 @@ This method:
 3. If so, exchanges it for tokens using the stored PKCE challenge.
 4. Otherwise, restores tokens from `localStorage`.
 5. Fires all registered initialisation listeners.
+
+### `callback()` (manual)
+
+If you handle the OAuth redirect on a custom route, call `await client.callback()` to process the exchange and clean the URL query params. The logic mirrors what `init()` does automatically.
 
 ---
 
@@ -88,7 +117,11 @@ client.isAuthenticated; // boolean — true once tokens are obtained
 client.isLoaded; // boolean — true after init() completes
 client.expiresIn; // number | undefined — seconds until access token expires
 client.userMeta; // { user_id: string | null, user_identifier: string | null }
+client.userInfo; // provider user info (e.g. { provider: "google" })
+client.error; // { error: string; error_description: string | null } | null
 ```
+
+Initialization listeners now receive an optional error parameter: `(client, error?) => void`. Handle errors there to surface failed callbacks in your UI.
 
 ---
 
@@ -108,6 +141,14 @@ Headers added:
 
 ---
 
+## Token helpers (0.2.0)
+
+- `getToken()` — read the current access token (restores from `localStorage` when needed).
+- `setTokenToCookie()` — store the token in a secure cookie (`path=/; secure; samesite=strict;`).
+- `verify(token?)` — validate a token against the configured subject schema (falls back to the current token when omitted).
+
+---
+
 ## Auto Token Refresh
 
 The client schedules a silent refresh **60 seconds before** the access token expires. New tokens are persisted to `localStorage` automatically. If the refresh fails, a warning is logged to the console.
@@ -119,7 +160,7 @@ The client schedules a silent refresh **60 seconds before** the access token exp
 Register callbacks that fire when auth state changes:
 
 ```typescript
-client.addInitializationListener("my-key", () => {
+client.addInitializationListener("my-key", (client, error) => {
   console.log("Auth state changed:", client.isAuthenticated);
 });
 ```
@@ -130,6 +171,19 @@ Call `triggerUpdate()` manually after state-changing operations like `updateUser
 await client.updateUserSession("public", { theme: "dark" });
 client.triggerUpdate(); // listeners fire
 ```
+
+---
+
+## User management (admin, server-only, 0.2.0)
+
+These helpers require a `secret` and should only run server-side:
+
+- `getUserById(user_id)` — fetch a specific user
+- `getUsers({ page, limit })` — paginated list of users
+- `updateUserById(user_id, data)` — overwrite identifier/public/private fields
+- `deleteUserById(user_id)` — delete the user
+
+All methods perform schema validation and return `Error` on failure.
 
 ---
 
